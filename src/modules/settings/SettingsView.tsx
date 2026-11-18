@@ -15,6 +15,9 @@ import {
   AlertCircle,
   Sparkles,
   Info,
+  Smartphone,
+  Share2,
+  CheckCircle2,
 } from 'lucide-react';
 import { UserSettings } from '@/types';
 import { db } from '@/services/database';
@@ -32,12 +35,41 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack, onDataReset 
   const [aiProvider, setAiProvider] = useState<'gemini' | 'openai' | 'server_default'>('gemini');
   const [hasConsentedAI, setHasConsentedAI] = useState<boolean>(true);
 
+  // PWA Install prompt state
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isStandalone, setIsStandalone] = useState<boolean>(false);
+  const [installSuccess, setInstallSuccess] = useState<boolean>(false);
+  const [selectedMobileTab, setSelectedMobileTab] = useState<'android' | 'ios'>('android');
+
   // Backup states
   const [backupPassword, setBackupPassword] = useState<string>('');
   const [restorePassword, setRestorePassword] = useState<string>('');
   const [backupStatus, setBackupStatus] = useState<string | null>(null);
   const [isProcessingBackup, setIsProcessingBackup] = useState<boolean>(false);
   const [isSavedMessage, setIsSavedMessage] = useState<boolean>(false);
+
+  useEffect(() => {
+    // Check if running in standalone mode (already installed)
+    if (typeof window !== 'undefined') {
+      const isStandaloneMode =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window.navigator as any).standalone === true;
+      setIsStandalone(isStandaloneMode);
+
+      // Listen for browser PWA install event (Android / Chrome)
+      const handleBeforeInstall = (e: Event) => {
+        e.preventDefault();
+        setDeferredPrompt(e);
+      };
+
+      window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+      return () => {
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+      };
+    }
+  }, []);
 
   useEffect(() => {
     db.user_settings.get('default').then((saved) => {
@@ -50,6 +82,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack, onDataReset 
       }
     });
   }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setInstallSuccess(true);
+      setDeferredPrompt(null);
+    }
+  };
 
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,7 +182,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack, onDataReset 
   };
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 bottom-nav-safe">
+    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5 bottom-nav-safe">
       {/* Header */}
       <div className="flex items-center justify-between">
         <button
@@ -152,7 +194,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack, onDataReset 
         </button>
         <h2 className="text-sm font-bold text-primary flex items-center gap-1.5">
           <Settings className="w-4 h-4 text-accent" />
-          <span>Configurações & Privacidade</span>
+          <span>Configurações & Instalação</span>
         </h2>
         <div className="w-12" />
       </div>
@@ -163,6 +205,97 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack, onDataReset 
           <span>Configurações atualizadas com sucesso!</span>
         </div>
       )}
+
+      {/* NOVO MÓDULO: INSTALAÇÃO NO CELULAR */}
+      <div className="p-4 rounded-2xl bg-surface border border-accent/40 shadow-lg space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-accent flex items-center gap-1.5">
+            <Smartphone className="w-4 h-4 text-accent" />
+            <span>Instalar Aplicativo no Celular</span>
+          </h3>
+          {isStandalone && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success/15 text-success border border-success/30 flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3" /> Instalado
+            </span>
+          )}
+        </div>
+
+        <p className="text-xs text-secondary leading-relaxed">
+          Instale o <strong>DAYLOG AI</strong> direto na sua tela inicial como um app nativo, com ícone próprio, tela cheia e acesso instantâneo sem barra de navegador.
+        </p>
+
+        {/* 1-Click Install Button if supported by browser */}
+        {deferredPrompt && (
+          <button
+            onClick={handleInstallClick}
+            className="w-full py-3 px-4 rounded-xl bg-accent hover:bg-accent-hover text-background text-xs font-bold flex items-center justify-center space-x-2 shadow-lg shadow-accent/25 transition-all active:scale-95 animate-pulse"
+          >
+            <Download className="w-4 h-4 stroke-[2.5]" />
+            <span>Instalar Agora na Tela Inicial</span>
+          </button>
+        )}
+
+        {installSuccess && (
+          <div className="p-3 rounded-xl bg-success/15 border border-success/30 text-success text-xs flex items-center gap-2">
+            <Check className="w-4 h-4" />
+            <span>Aplicativo instalado com sucesso no seu dispositivo!</span>
+          </div>
+        )}
+
+        {/* Device Guide Tabs */}
+        <div className="pt-1 space-y-2.5">
+          <div className="flex bg-graphite p-1 rounded-xl border border-border">
+            <button
+              onClick={() => setSelectedMobileTab('android')}
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                selectedMobileTab === 'android' ? 'bg-accent text-background shadow' : 'text-secondary hover:text-primary'
+              }`}
+            >
+              Android (Chrome)
+            </button>
+            <button
+              onClick={() => setSelectedMobileTab('ios')}
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                selectedMobileTab === 'ios' ? 'bg-accent text-background shadow' : 'text-secondary hover:text-primary'
+              }`}
+            >
+              iPhone (Safari)
+            </button>
+          </div>
+
+          {selectedMobileTab === 'android' ? (
+            <div className="p-3 rounded-xl bg-graphite border border-border text-xs text-secondary space-y-2">
+              <div className="flex items-start gap-2">
+                <span className="w-5 h-5 rounded-full bg-accent/15 text-accent font-bold flex items-center justify-center shrink-0 text-[11px]">1</span>
+                <span>Abra este site no <strong>Google Chrome</strong> do seu celular.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="w-5 h-5 rounded-full bg-accent/15 text-accent font-bold flex items-center justify-center shrink-0 text-[11px]">2</span>
+                <span>Toque nos <strong>três pontinhos (`⋮`)</strong> no canto superior direito.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="w-5 h-5 rounded-full bg-accent/15 text-accent font-bold flex items-center justify-center shrink-0 text-[11px]">3</span>
+                <span>Toque em <strong>&quot;Instalar aplicativo&quot;</strong> ou <strong>&quot;Adicionar à tela inicial&quot;</strong>.</span>
+              </div>
+            </div>
+          ) : (
+            <div className="p-3 rounded-xl bg-graphite border border-border text-xs text-secondary space-y-2">
+              <div className="flex items-start gap-2">
+                <span className="w-5 h-5 rounded-full bg-accent/15 text-accent font-bold flex items-center justify-center shrink-0 text-[11px]">1</span>
+                <span>Abra este site no navegador <strong>Safari</strong> do seu iPhone.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="w-5 h-5 rounded-full bg-accent/15 text-accent font-bold flex items-center justify-center shrink-0 text-[11px]">2</span>
+                <span>Toque no botão de <strong>Compartilhar</strong> (ícone do quadrado com seta para cima na barra inferior).</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="w-5 h-5 rounded-full bg-accent/15 text-accent font-bold flex items-center justify-center shrink-0 text-[11px]">3</span>
+                <span>Role para baixo e selecione <strong>&quot;Adicionar à Tela de Início&quot;</strong>.</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* User Profile & IA Key Settings */}
       <form onSubmit={handleSaveSettings} className="p-4 rounded-2xl bg-surface border border-border space-y-4">
