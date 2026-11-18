@@ -18,6 +18,8 @@ import {
   Smartphone,
   Share2,
   CheckCircle2,
+  X,
+  ExternalLink,
 } from 'lucide-react';
 import { UserSettings } from '@/types';
 import { db } from '@/services/database';
@@ -35,12 +37,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack, onDataReset 
   const [aiProvider, setAiProvider] = useState<'gemini' | 'openai' | 'server_default'>('gemini');
   const [hasConsentedAI, setHasConsentedAI] = useState<boolean>(true);
 
-  // PWA Install prompt state
+  // PWA Install state
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isStandalone, setIsStandalone] = useState<boolean>(false);
   const [installSuccess, setInstallSuccess] = useState<boolean>(false);
-  const [selectedMobileTab, setSelectedMobileTab] = useState<'android' | 'ios'>('android');
+  const [showGuideModal, setShowGuideModal] = useState<boolean>(false);
+  const [deviceType, setDeviceType] = useState<'android' | 'ios' | 'desktop'>('android');
 
   // Backup states
   const [backupPassword, setBackupPassword] = useState<string>('');
@@ -50,7 +53,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack, onDataReset 
   const [isSavedMessage, setIsSavedMessage] = useState<boolean>(false);
 
   useEffect(() => {
-    // Check if running in standalone mode (already installed)
     if (typeof window !== 'undefined') {
       const isStandaloneMode =
         window.matchMedia('(display-mode: standalone)').matches ||
@@ -58,7 +60,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack, onDataReset 
         (window.navigator as any).standalone === true;
       setIsStandalone(isStandaloneMode);
 
-      // Listen for browser PWA install event (Android / Chrome)
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isAndroid = /Android/.test(navigator.userAgent);
+      if (isIOS) setDeviceType('ios');
+      else if (isAndroid) setDeviceType('android');
+      else setDeviceType('desktop');
+
       const handleBeforeInstall = (e: Event) => {
         e.preventDefault();
         setDeferredPrompt(e);
@@ -83,7 +90,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack, onDataReset 
     });
   }, []);
 
-  const handleDirectInstallOrDownload = async () => {
+  const handleInstallApp = async () => {
+    if (isStandalone) {
+      alert('O DAYLOG AI já está instalado como aplicativo no seu aparelho!');
+      return;
+    }
+
     if (deferredPrompt) {
       try {
         deferredPrompt.prompt();
@@ -98,58 +110,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack, onDataReset 
       }
     }
 
-    if (isStandalone) {
-      alert('O DAYLOG AI já está instalado e funcionando como app no seu dispositivo!');
-      return;
-    }
-
-    // Direct download of standalone mobile launcher
-    handleDownloadLauncher();
-  };
-
-  const handleDownloadLauncher = () => {
-    const installHtml = `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>DAYLOG AI</title>
-  <meta name="theme-color" content="#080A0B">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="https://daylogia.vercel.app/manifest.json">
-  <link rel="icon" href="https://daylogia.vercel.app/icons/icon-192x192.png">
-  <style>
-    body { background: #080A0B; color: #F5F5F5; font-family: -apple-system, BlinkMacSystemFont, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; padding: 20px; box-sizing: border-box; }
-    .icon { width: 80px; height: 80px; border-radius: 20px; background: #121619; border: 2px solid #F59E0B; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; }
-    .dot { width: 30px; height: 30px; border-radius: 50%; background: #F59E0B; }
-    h1 { margin: 0 0 10px 0; font-size: 24px; color: #F5F5F5; }
-    p { margin: 0 0 24px 0; color: #92999F; font-size: 14px; }
-    .btn { background: #F59E0B; color: #080A0B; padding: 16px 32px; border-radius: 14px; font-weight: bold; text-decoration: none; font-size: 16px; display: inline-block; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3); }
-  </style>
-</head>
-<body>
-  <div class="icon"><div class="dot"></div></div>
-  <h1>DAYLOG AI</h1>
-  <p>Iniciando seu diário pessoal inteligente...</p>
-  <a class="btn" href="https://daylogia.vercel.app">Abrir Aplicativo</a>
-  <script>
-    setTimeout(function() {
-      window.location.href = "https://daylogia.vercel.app";
-    }, 500);
-  </script>
-</body>
-</html>`;
-    const blob = new Blob([installHtml], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'DAYLOG-AI.html';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    setInstallSuccess(true);
+    // Open clean interactive instruction sheet
+    setShowGuideModal(true);
   };
 
   const handleSaveSettings = async (e: React.FormEvent) => {
@@ -265,52 +227,53 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack, onDataReset 
         </div>
       )}
 
-      {/* NOVO MÓDULO: DOWNLOAD E INSTALAÇÃO DIRETA */}
-      <div className="p-4 rounded-2xl bg-surface border border-accent/50 shadow-xl space-y-3.5">
+      {/* CARD PRINCIPAL DE INSTALAÇÃO NO CELULAR */}
+      <div className="p-4 rounded-2xl bg-surface border border-accent/40 shadow-xl space-y-3.5">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-accent flex items-center gap-1.5">
-            <Smartphone className="w-4 h-4 text-accent" />
-            <span>Baixar Aplicativo no Celular</span>
-          </h3>
-          {isStandalone && (
+          <div className="flex items-center space-x-2.5">
+            <div className="w-8 h-8 rounded-xl bg-accent/20 border border-accent/40 flex items-center justify-center text-accent">
+              <Smartphone className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-primary">
+                Aplicativo DAYLOG AI
+              </h3>
+              <p className="text-[11px] text-secondary">Instale no celular com ícone na tela inicial</p>
+            </div>
+          </div>
+          {isStandalone ? (
             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success/15 text-success border border-success/30 flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" /> App Instalado
+              <CheckCircle2 className="w-3 h-3" /> Instalado
+            </span>
+          ) : (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent/15 text-accent border border-accent/30">
+              Disponível
             </span>
           )}
         </div>
 
         <p className="text-xs text-secondary leading-relaxed">
-          Instale o <strong>DAYLOG AI</strong> direto no seu aparelho. O aplicativo roda com ícone exclusivo na tela de início, tela cheia e armazenamento local.
+          O DAYLOG AI funciona como um aplicativo real no seu celular. Ao instalar, ele cria um ícone exclusivo na sua tela inicial, roda em tela cheia e funciona mesmo sem internet.
         </p>
 
         {installSuccess && (
           <div className="p-3 rounded-xl bg-success/15 border border-success/30 text-success text-xs flex items-center gap-2">
             <Check className="w-4 h-4" />
-            <span>Ação realizada com sucesso no seu dispositivo!</span>
+            <span>Aplicativo instalado com sucesso no seu dispositivo!</span>
           </div>
         )}
 
-        {/* Botões de Ação Direta */}
-        <div className="space-y-2 pt-1">
-          <button
-            onClick={handleDirectInstallOrDownload}
-            className="w-full py-3.5 px-4 rounded-xl bg-accent hover:bg-accent-hover text-background text-xs font-bold flex items-center justify-center space-x-2 shadow-lg shadow-accent/25 transition-all active:scale-95"
-          >
-            <Download className="w-4 h-4 stroke-[2.5]" />
-            <span>Instalar Aplicativo Agora</span>
-          </button>
-
-          <button
-            onClick={handleDownloadLauncher}
-            className="w-full py-2.5 px-3 rounded-xl bg-graphite hover:bg-surface-hover border border-border text-primary text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all active:scale-95"
-          >
-            <Smartphone className="w-4 h-4 text-accent" />
-            <span>Baixar Arquivo Inicializador (.html)</span>
-          </button>
-        </div>
+        {/* Botão Oficial de Instalação */}
+        <button
+          onClick={handleInstallApp}
+          className="w-full py-3.5 px-4 rounded-xl bg-accent hover:bg-accent-hover text-background text-xs font-bold flex items-center justify-center space-x-2 shadow-lg shadow-accent/25 transition-all active:scale-95"
+        >
+          <Smartphone className="w-4 h-4 stroke-[2.5]" />
+          <span>{isStandalone ? 'Aplicativo Já Instalado' : 'Instalar Aplicativo no Celular'}</span>
+        </button>
 
         <p className="text-[10px] text-center text-secondary/70">
-          Instalação direta • Não requer lojas de aplicativos
+          Sem lojas de terceiros • Ícone oficial na tela inicial
         </p>
       </div>
 
@@ -499,6 +462,71 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack, onDataReset 
           Zerar Banco de Dados Local
         </button>
       </div>
+
+      {/* MODAL DE CONFIRMAÇÃO DE INSTALAÇÃO DO APP NO CELULAR */}
+      {showGuideModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-sm bg-graphite rounded-3xl border border-accent/40 p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 rounded-xl bg-accent text-background flex items-center justify-center font-bold">
+                  <Smartphone className="w-5 h-5 stroke-[2.5]" />
+                </div>
+                <h3 className="text-sm font-bold text-primary">Instalar App no Celular</h3>
+              </div>
+              <button
+                onClick={() => setShowGuideModal(false)}
+                className="p-1 text-secondary hover:text-primary rounded-full"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-secondary leading-relaxed">
+              Para fixar o ícone do <strong>DAYLOG AI</strong> na tela inicial do seu celular como aplicativo oficial:
+            </p>
+
+            {deviceType === 'ios' ? (
+              <div className="space-y-2.5 p-3 rounded-2xl bg-surface border border-border text-xs text-secondary">
+                <div className="flex items-start gap-2.5">
+                  <span className="w-6 h-6 rounded-full bg-accent/20 text-accent font-bold flex items-center justify-center shrink-0 text-xs">1</span>
+                  <span>Toque no botão de <strong>Compartilhar</strong> (ícone do quadrado com a seta ⬆️ na barra do Safari).</span>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="w-6 h-6 rounded-full bg-accent/20 text-accent font-bold flex items-center justify-center shrink-0 text-xs">2</span>
+                  <span>Role a lista para baixo e toque em <strong>&quot;Adicionar à Tela de Início&quot;</strong>.</span>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="w-6 h-6 rounded-full bg-accent/20 text-accent font-bold flex items-center justify-center shrink-0 text-xs">3</span>
+                  <span>Toque em <strong>Adicionar</strong>. O app aparecerá na sua tela com ícone próprio!</span>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2.5 p-3 rounded-2xl bg-surface border border-border text-xs text-secondary">
+                <div className="flex items-start gap-2.5">
+                  <span className="w-6 h-6 rounded-full bg-accent/20 text-accent font-bold flex items-center justify-center shrink-0 text-xs">1</span>
+                  <span>Toque no menu de <strong>3 pontinhos (`⋮`)</strong> no topo do seu navegador no celular.</span>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="w-6 h-6 rounded-full bg-accent/20 text-accent font-bold flex items-center justify-center shrink-0 text-xs">2</span>
+                  <span>Selecione <strong>&quot;Instalar aplicativo&quot;</strong> (ou &quot;Adicionar à tela inicial&quot;).</span>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="w-6 h-6 rounded-full bg-accent/20 text-accent font-bold flex items-center justify-center shrink-0 text-xs">3</span>
+                  <span>O Android instala o aplicativo nativo com ícone e tela cheia!</span>
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={() => setShowGuideModal(false)}
+              className="w-full py-3 rounded-xl bg-accent hover:bg-accent-hover text-background text-xs font-bold transition-all"
+            >
+              Entendido!
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
