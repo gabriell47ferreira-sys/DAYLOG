@@ -263,14 +263,27 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack, onDataReset 
           </div>
         )}
 
-        {/* Botão Oficial de Instalação */}
-        <button
-          onClick={handleInstallApp}
-          className="w-full py-3.5 px-4 rounded-xl bg-accent hover:bg-accent-hover text-background text-xs font-bold flex items-center justify-center space-x-2 shadow-lg shadow-accent/25 transition-all active:scale-95"
-        >
-          <Smartphone className="w-4 h-4 stroke-[2.5]" />
-          <span>{isStandalone ? 'Aplicativo Já Instalado' : 'Instalar Aplicativo no Celular'}</span>
-        </button>
+        {/* Botões de Ação de Instalação e APK */}
+        <div className="space-y-2 pt-1">
+          <button
+            onClick={handleInstallApp}
+            className="w-full py-3.5 px-4 rounded-xl bg-accent hover:bg-accent-hover text-background text-xs font-bold flex items-center justify-center space-x-2 shadow-lg shadow-accent/25 transition-all active:scale-95"
+          >
+            <Smartphone className="w-4 h-4 stroke-[2.5]" />
+            <span>{isStandalone ? 'Aplicativo Já Instalado' : 'Instalar App na Tela Inicial'}</span>
+          </button>
+
+          <a
+            href="https://www.pwabuilder.com/reportcard?site=https://daylogia.vercel.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full py-2.5 px-3 rounded-xl bg-graphite hover:bg-surface-hover border border-border text-primary text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all active:scale-95 text-center"
+          >
+            <Download className="w-4 h-4 text-accent" />
+            <span>Gerar / Baixar Pacote APK (.apk)</span>
+            <ExternalLink className="w-3 h-3 text-secondary ml-1" />
+          </a>
+        </div>
 
         <p className="text-[10px] text-center text-secondary/70">
           Sem lojas de terceiros • Ícone oficial na tela inicial
