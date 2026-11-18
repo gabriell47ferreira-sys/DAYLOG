@@ -83,14 +83,73 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack, onDataReset 
     });
   }, []);
 
-  const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setInstallSuccess(true);
-      setDeferredPrompt(null);
+  const handleDirectInstallOrDownload = async () => {
+    if (deferredPrompt) {
+      try {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          setInstallSuccess(true);
+          setDeferredPrompt(null);
+          return;
+        }
+      } catch (e) {
+        console.warn('Install prompt error:', e);
+      }
     }
+
+    if (isStandalone) {
+      alert('O DAYLOG AI já está instalado e funcionando como app no seu dispositivo!');
+      return;
+    }
+
+    // Direct download of standalone mobile launcher
+    handleDownloadLauncher();
+  };
+
+  const handleDownloadLauncher = () => {
+    const installHtml = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>DAYLOG AI</title>
+  <meta name="theme-color" content="#080A0B">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="https://daylogia.vercel.app/manifest.json">
+  <link rel="icon" href="https://daylogia.vercel.app/icons/icon-192x192.png">
+  <style>
+    body { background: #080A0B; color: #F5F5F5; font-family: -apple-system, BlinkMacSystemFont, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; padding: 20px; box-sizing: border-box; }
+    .icon { width: 80px; height: 80px; border-radius: 20px; background: #121619; border: 2px solid #F59E0B; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; }
+    .dot { width: 30px; height: 30px; border-radius: 50%; background: #F59E0B; }
+    h1 { margin: 0 0 10px 0; font-size: 24px; color: #F5F5F5; }
+    p { margin: 0 0 24px 0; color: #92999F; font-size: 14px; }
+    .btn { background: #F59E0B; color: #080A0B; padding: 16px 32px; border-radius: 14px; font-weight: bold; text-decoration: none; font-size: 16px; display: inline-block; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3); }
+  </style>
+</head>
+<body>
+  <div class="icon"><div class="dot"></div></div>
+  <h1>DAYLOG AI</h1>
+  <p>Iniciando seu diário pessoal inteligente...</p>
+  <a class="btn" href="https://daylogia.vercel.app">Abrir Aplicativo</a>
+  <script>
+    setTimeout(function() {
+      window.location.href = "https://daylogia.vercel.app";
+    }, 500);
+  </script>
+</body>
+</html>`;
+    const blob = new Blob([installHtml], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'DAYLOG-AI.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setInstallSuccess(true);
   };
 
   const handleSaveSettings = async (e: React.FormEvent) => {
@@ -206,95 +265,53 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack, onDataReset 
         </div>
       )}
 
-      {/* NOVO MÓDULO: INSTALAÇÃO NO CELULAR */}
-      <div className="p-4 rounded-2xl bg-surface border border-accent/40 shadow-lg space-y-3">
+      {/* NOVO MÓDULO: DOWNLOAD E INSTALAÇÃO DIRETA */}
+      <div className="p-4 rounded-2xl bg-surface border border-accent/50 shadow-xl space-y-3.5">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-bold uppercase tracking-wider text-accent flex items-center gap-1.5">
             <Smartphone className="w-4 h-4 text-accent" />
-            <span>Instalar Aplicativo no Celular</span>
+            <span>Baixar Aplicativo no Celular</span>
           </h3>
           {isStandalone && (
             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success/15 text-success border border-success/30 flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" /> Instalado
+              <CheckCircle2 className="w-3 h-3" /> App Instalado
             </span>
           )}
         </div>
 
         <p className="text-xs text-secondary leading-relaxed">
-          Instale o <strong>DAYLOG AI</strong> direto na sua tela inicial como um app nativo, com ícone próprio, tela cheia e acesso instantâneo sem barra de navegador.
+          Instale o <strong>DAYLOG AI</strong> direto no seu aparelho. O aplicativo roda com ícone exclusivo na tela de início, tela cheia e armazenamento local.
         </p>
-
-        {/* 1-Click Install Button if supported by browser */}
-        {deferredPrompt && (
-          <button
-            onClick={handleInstallClick}
-            className="w-full py-3 px-4 rounded-xl bg-accent hover:bg-accent-hover text-background text-xs font-bold flex items-center justify-center space-x-2 shadow-lg shadow-accent/25 transition-all active:scale-95 animate-pulse"
-          >
-            <Download className="w-4 h-4 stroke-[2.5]" />
-            <span>Instalar Agora na Tela Inicial</span>
-          </button>
-        )}
 
         {installSuccess && (
           <div className="p-3 rounded-xl bg-success/15 border border-success/30 text-success text-xs flex items-center gap-2">
             <Check className="w-4 h-4" />
-            <span>Aplicativo instalado com sucesso no seu dispositivo!</span>
+            <span>Ação realizada com sucesso no seu dispositivo!</span>
           </div>
         )}
 
-        {/* Device Guide Tabs */}
-        <div className="pt-1 space-y-2.5">
-          <div className="flex bg-graphite p-1 rounded-xl border border-border">
-            <button
-              onClick={() => setSelectedMobileTab('android')}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                selectedMobileTab === 'android' ? 'bg-accent text-background shadow' : 'text-secondary hover:text-primary'
-              }`}
-            >
-              Android (Chrome)
-            </button>
-            <button
-              onClick={() => setSelectedMobileTab('ios')}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                selectedMobileTab === 'ios' ? 'bg-accent text-background shadow' : 'text-secondary hover:text-primary'
-              }`}
-            >
-              iPhone (Safari)
-            </button>
-          </div>
+        {/* Botões de Ação Direta */}
+        <div className="space-y-2 pt-1">
+          <button
+            onClick={handleDirectInstallOrDownload}
+            className="w-full py-3.5 px-4 rounded-xl bg-accent hover:bg-accent-hover text-background text-xs font-bold flex items-center justify-center space-x-2 shadow-lg shadow-accent/25 transition-all active:scale-95"
+          >
+            <Download className="w-4 h-4 stroke-[2.5]" />
+            <span>Instalar Aplicativo Agora</span>
+          </button>
 
-          {selectedMobileTab === 'android' ? (
-            <div className="p-3 rounded-xl bg-graphite border border-border text-xs text-secondary space-y-2">
-              <div className="flex items-start gap-2">
-                <span className="w-5 h-5 rounded-full bg-accent/15 text-accent font-bold flex items-center justify-center shrink-0 text-[11px]">1</span>
-                <span>Abra este site no <strong>Google Chrome</strong> do seu celular.</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="w-5 h-5 rounded-full bg-accent/15 text-accent font-bold flex items-center justify-center shrink-0 text-[11px]">2</span>
-                <span>Toque nos <strong>três pontinhos (`⋮`)</strong> no canto superior direito.</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="w-5 h-5 rounded-full bg-accent/15 text-accent font-bold flex items-center justify-center shrink-0 text-[11px]">3</span>
-                <span>Toque em <strong>&quot;Instalar aplicativo&quot;</strong> ou <strong>&quot;Adicionar à tela inicial&quot;</strong>.</span>
-              </div>
-            </div>
-          ) : (
-            <div className="p-3 rounded-xl bg-graphite border border-border text-xs text-secondary space-y-2">
-              <div className="flex items-start gap-2">
-                <span className="w-5 h-5 rounded-full bg-accent/15 text-accent font-bold flex items-center justify-center shrink-0 text-[11px]">1</span>
-                <span>Abra este site no navegador <strong>Safari</strong> do seu iPhone.</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="w-5 h-5 rounded-full bg-accent/15 text-accent font-bold flex items-center justify-center shrink-0 text-[11px]">2</span>
-                <span>Toque no botão de <strong>Compartilhar</strong> (ícone do quadrado com seta para cima na barra inferior).</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="w-5 h-5 rounded-full bg-accent/15 text-accent font-bold flex items-center justify-center shrink-0 text-[11px]">3</span>
-                <span>Role para baixo e selecione <strong>&quot;Adicionar à Tela de Início&quot;</strong>.</span>
-              </div>
-            </div>
-          )}
+          <button
+            onClick={handleDownloadLauncher}
+            className="w-full py-2.5 px-3 rounded-xl bg-graphite hover:bg-surface-hover border border-border text-primary text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all active:scale-95"
+          >
+            <Smartphone className="w-4 h-4 text-accent" />
+            <span>Baixar Arquivo Inicializador (.html)</span>
+          </button>
         </div>
+
+        <p className="text-[10px] text-center text-secondary/70">
+          Instalação direta • Não requer lojas de aplicativos
+        </p>
       </div>
 
       {/* User Profile & IA Key Settings */}
