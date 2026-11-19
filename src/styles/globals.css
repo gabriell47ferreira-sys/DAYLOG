@@ -24,12 +24,23 @@ body {
   min-height: 100vh;
   min-height: -webkit-fill-available;
   overflow-x: hidden;
+  overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile Touch Optimizations */
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
 }
 
 /* Custom minimal scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -47,14 +58,18 @@ body {
 
 /* Glass & Surface utilities */
 .glass-panel {
-  background: rgba(25, 30, 34, 0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(38, 44, 49, 0.6);
+  background: rgba(25, 30, 34, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(38, 44, 49, 0.7);
 }
 
 .bottom-nav-safe {
-  padding-bottom: calc(var(--safe-bottom) + 68px);
+  padding-bottom: calc(var(--safe-bottom) + 72px);
+}
+
+.top-safe-area {
+  padding-top: max(var(--safe-top), 12px);
 }
 
 @keyframes pulseRecordGlow {
@@ -62,7 +77,7 @@ body {
     box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.5);
   }
   50% {
-    box-shadow: 0 0 0 14px rgba(245, 158, 11, 0);
+    box-shadow: 0 0 0 16px rgba(245, 158, 11, 0);
   }
 }
 

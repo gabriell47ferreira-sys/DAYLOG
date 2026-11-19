@@ -3,6 +3,8 @@ const STATIC_ASSETS = [
   '/',
   '/manifest.json',
   '/favicon.ico',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
 ];
 
 self.addEventListener('install', (event) => {
@@ -35,12 +37,12 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
 
-  // Don't cache API calls
+  // Privacy Rule: Never cache API endpoints
   if (url.pathname.startsWith('/api/')) {
     return;
   }
 
-  // Network-first with cache fallback strategy for pages and static assets
+  // Network-first strategy with cache fallback
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {

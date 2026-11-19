@@ -32,6 +32,23 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/icons/icon-192x192.png" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                    .then(function(reg) {
+                      console.log('[PWA] Service Worker registrado com escopo:', reg.scope);
+                    })
+                    .catch(function(err) {
+                      console.warn('[PWA] Falha ao registrar Service Worker:', err);
+                    });
+                });
+              }
+            `,
+          }}
+        />
       </head>
       <body className="bg-background text-primary min-h-screen flex justify-center selection:bg-accent selection:text-background">
         <div className="w-full max-w-md min-h-screen flex flex-col relative bg-background border-x border-border/40 shadow-2xl">
