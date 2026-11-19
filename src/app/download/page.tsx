@@ -187,13 +187,23 @@ export default function DownloadPage() {
 
               <div className="space-y-2">
                 <a
+                  href="https://github.com/gabriell47ferreira-sys/DAYLOG/releases/latest/download/DAYLOG-AI.apk"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3.5 px-4 rounded-xl bg-accent hover:bg-accent-hover text-background text-xs font-bold flex items-center justify-center space-x-2 transition-all shadow-md shadow-accent/20 text-center"
+                >
+                  <Download className="w-4 h-4 stroke-[2.5]" />
+                  <span>Baixar APK Direto (GitHub Release)</span>
+                </a>
+
+                <a
                   href="https://www.pwabuilder.com/reportcard?site=https://daylogia.vercel.app"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full py-3 px-4 rounded-xl bg-accent hover:bg-accent-hover text-background text-xs font-bold flex items-center justify-center space-x-2 transition-all shadow-md shadow-accent/20"
+                  className="w-full py-2.5 px-3 rounded-xl bg-graphite hover:bg-surface-hover border border-border text-primary text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all text-center"
                 >
-                  <span>Gerar APK no PWABuilder (Oficial)</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Gerador Alternativo (PWABuilder)</span>
+                  <ExternalLink className="w-3.5 h-3.5 text-secondary" />
                 </a>
 
                 <Link

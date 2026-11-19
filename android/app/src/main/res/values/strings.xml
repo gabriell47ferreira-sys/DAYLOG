@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">DAYLOG AI</string>
+    <string name="title_activity_main">DAYLOG AI</string>
+    <string name="package_name">com.daylogai.app</string>
+    <string name="custom_url_scheme">com.daylogai.app</string>
+</resources>

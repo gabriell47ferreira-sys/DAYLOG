@@ -274,13 +274,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack, onDataReset 
           </button>
 
           <a
-            href="https://www.pwabuilder.com/reportcard?site=https://daylogia.vercel.app"
+            href="https://github.com/gabriell47ferreira-sys/DAYLOG/releases/latest/download/DAYLOG-AI.apk"
             target="_blank"
             rel="noopener noreferrer"
             className="w-full py-2.5 px-3 rounded-xl bg-graphite hover:bg-surface-hover border border-border text-primary text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all active:scale-95 text-center"
           >
             <Download className="w-4 h-4 text-accent" />
-            <span>Gerar / Baixar Pacote APK (.apk)</span>
+            <span>Baixar Pacote APK Direto (.apk)</span>
             <ExternalLink className="w-3 h-3 text-secondary ml-1" />
           </a>
         </div>
