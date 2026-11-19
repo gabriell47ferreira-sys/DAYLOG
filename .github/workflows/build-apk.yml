@@ -45,7 +45,9 @@ jobs:
         run: npm run build
 
       - name: Sync Capacitor Android Project
-        run: npx cap sync android
+        run: |
+          npx cap copy android
+          npx cap update android || true
 
       - name: Build Android Debug APK
         run: |
@@ -69,6 +71,7 @@ jobs:
         with:
           tag_name: v1.0.0
           name: "DAYLOG AI v1.0.0 (Android APK)"
+          make_latest: true
           body: |
             ### 📱 DAYLOG AI — Aplicativo Oficial Android (.apk)
             
