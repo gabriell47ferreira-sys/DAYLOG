@@ -34,7 +34,7 @@ jobs:
       - name: Accept Android SDK Licenses & Install Platforms
         run: |
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "platforms;android-34" "platforms;android-36" "build-tools;35.0.0" || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "platforms;android-34" "build-tools;35.0.0" || true
 
       - name: Grant Execute Permission for Gradlew
         run: chmod +x android/gradlew
@@ -58,6 +58,8 @@ jobs:
           EXIT_CODE=${PIPESTATUS[0]}
           if [ $EXIT_CODE -ne 0 ]; then
             echo "=== GRADLE FAILED WITH EXIT CODE $EXIT_CODE ==="
+            echo "=== SHOWING LAST 200 LINES OF GRADLE LOG ==="
+            tail -n 200 ../gradle.log
             exit $EXIT_CODE
           fi
 
