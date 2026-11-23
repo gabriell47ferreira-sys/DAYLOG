@@ -28,7 +28,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Accept Android SDK Licenses & Install Platforms
@@ -51,9 +51,22 @@ jobs:
           cp -r public/* android/app/src/main/assets/public/ || true
 
       - name: Build Android Debug APK
+        shell: bash
         run: |
           cd android
-          ./gradlew :app:assembleDebug -x lint -x test --no-daemon --stacktrace
+          ./gradlew :app:assembleDebug -x lint -x test --no-daemon --stacktrace 2>&1 | tee ../gradle.log
+          EXIT_CODE=${PIPESTATUS[0]}
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "=== GRADLE FAILED WITH EXIT CODE $EXIT_CODE ==="
+            exit $EXIT_CODE
+          fi
+
+      - name: Upload Gradle Build Log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: gradle.log
 
       - name: Locate and Prepare APK for Distribution
         run: |
