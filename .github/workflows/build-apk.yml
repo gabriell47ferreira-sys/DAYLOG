@@ -54,20 +54,19 @@ jobs:
         run: |
           cd android
           ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee ../gradle.log
-        continue-on-error: true
 
-      - name: Check APK and Output Failure Log
+      - name: Locate and Prepare APK for Distribution
         run: |
-          if [ ! -f android/app/build/outputs/apk/debug/app-debug.apk ]; then
-            echo "=== GRADLE BUILD FAILED — LAST 100 LINES ==="
+          echo "=== SEARCHING FOR COMPILED APK ==="
+          find android -name "*.apk"
+          APK_PATH=$(find android -name "*.apk" | head -n 1)
+          if [ -z "$APK_PATH" ]; then
+            echo "No APK was generated. Gradle log:"
             tail -n 100 gradle.log
             exit 1
           fi
-          echo "=== BUILD SUCCESSFUL ==="
-
-      - name: Rename APK for Distribution
-        run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk ./DAYLOG-AI.apk
+          echo "Found APK at: $APK_PATH"
+          cp "$APK_PATH" ./DAYLOG-AI.apk
           ls -lh ./DAYLOG-AI.apk
 
       - name: Upload APK as Workflow Artifact
