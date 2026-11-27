@@ -82,6 +82,26 @@ jobs:
           name: gradle-build-log
           path: gradle.log
 
+      - name: Publish Debug Log on Failure
+        if: failure()
+        uses: softprops/action-gh-release@v2
+        continue-on-error: true
+        with:
+          tag_name: v-debug
+          name: "DAYLOG AI Build Debug Log"
+          body: "Log de erro da compilação do Gradle para análise automática."
+          files: gradle.log
+
+      - name: Commit Gradle Log on Failure
+        if: failure()
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          cp gradle.log android/last_error.log
+          git add android/last_error.log
+          git commit -m "chore(debug): save gradle build error log [skip ci]" || true
+          git push origin main || true
+
       - name: Locate and Prepare APK for Distribution
         run: |
           echo "=== SEARCHING FOR COMPILED APK ==="
