@@ -54,19 +54,25 @@ jobs:
         shell: bash
         run: |
           cd android
+          set +e
           ./gradlew :app:assembleDebug -PcompileSdkVersion=35 -PtargetSdkVersion=35 -x lint -x test --no-daemon --stacktrace 2>&1 | tee ../gradle.log
           EXIT_CODE=${PIPESTATUS[0]}
+          set -e
           if [ $EXIT_CODE -ne 0 ]; then
             echo "=== GRADLE FAILED WITH EXIT CODE $EXIT_CODE ==="
             echo "=== SHOWING LAST 200 LINES OF GRADLE LOG ==="
             tail -n 200 ../gradle.log
-            echo "### ❌ Gradle Build Failed" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -n 100 ../gradle.log >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
             exit $EXIT_CODE
-          else
-            echo "### ✅ Android APK Compilado com Sucesso!" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Publish Gradle Log to Workflow Summary
+        if: always()
+        run: |
+          if [ -f gradle.log ]; then
+            echo "### 📋 Gradle Build Log" >> $GITHUB_STEP_SUMMARY
+            echo '```text' >> $GITHUB_STEP_SUMMARY
+            tail -n 120 gradle.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
           fi
 
       - name: Upload Gradle Build Log
